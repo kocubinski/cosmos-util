@@ -17,7 +17,7 @@
   (or (string/ends-with? p "_test.go")
       (string/includes? p "testutil")))
 
-(defn module-report [mode f module]
+(defn module-file-edges [mode f module]
   (->> (xml/parse f)
        (:content)
        (mapcat (fn [file-node]
@@ -60,20 +60,36 @@
 
 (defn dep-edges [mode]
   (->> (modules dependency-xml)
-       (mapcat (partial module-report mode dependency-xml))
+       (mapcat (partial module-file-edges mode dependency-xml))
        (map (partial map module-from-path))
        (set)))
 
 (def dep-graph (comp graph-from-edges dep-edges))
 
-(defn print-report [mode]
-  (doseq [m (modules dependency-xml)]
-    (doseq [[file dep] (module-report mode dependency-xml m)]
-      (println file "->" dep))))
+(defn print-edges [edges]
+  (doseq [[a b] edges]
+    (println a "->" b)))
+
+(defn print-files [mode]
+  (->> (modules dependency-xml)
+       (mapcat (partial module-file-edges mode dependency-xml))
+       (print-edges)))
+
+;; Question:
+;; What novel dependencies are introduced in the test phase only?
+;;  - List these per module, per file.
 
 (defn test-only-edges
   []
   (set/difference (dep-edges :all) (dep-edges :prod)))
+
+(defn novel-test-refs
+  []
+  (let [test-only? (set (test-only-edges))]
+    (->> (modules dependency-xml)
+         (mapcat (partial module-file-edges :test dependency-xml))
+         (filter (fn [[a b]]
+                   (test-only? [(module-from-path a) (module-from-path b)]))))))
 
 (defn visualize [edges]
   (-> (tangle/graph->dot

@@ -1,0 +1,173 @@
+* Module Dependencies
+** Overview
+
+This document provides dependency analysis of modules in the Cosmos SDK located ~/x/~. Analyses were
+generated from an XML export of JetBrains Goland's Dependency Analysis feature with processing of
+the graph done by Clojure code in this same repo. Reports are included as either text format or PNG
+below the REPL command which generated them.
+
+The current XML export was generated from ~main~ on 2022-08-24.
+
+** Full dependency graph
+
+Which modules depend on which?
+
+#+begin_example
+deps> (visualize (dep-edges :all))
+#+end_example
+
+[[./module-dependencies/all.png]]
+
+** Test phase only dependencies
+
+Answers the question "What dependencies are introduced in the test phase only?".  These can be
+addressed immediately, probably by moving the source files to the ~/tests~ folder.
+
+#+begin_example
+deps> (print-edges (novel-test-refs))
+
+/x/auth/client/testutil/suite.go -> /x/genutil/client/cli/init.go
+/x/auth/testutil/app_config.go -> /x/genutil/types/types.go
+/x/auth/testutil/app_config.go -> /x/mint/types/keys.go
+/x/authz/testutil/app_config.go -> /x/params/types/keys.go
+/x/authz/testutil/app_config.go -> /x/genutil/types/types.go
+/x/authz/testutil/app_config.go -> /x/mint/types/keys.go
+/x/bank/bench_test.go -> /x/staking/types/pool.go
+/x/bank/keeper/genesis_test.go -> /x/mint/types/keys.go
+/x/bank/keeper/grpc_query_test.go -> /x/mint/types/keys.go
+/x/bank/keeper/keeper_test.go -> /x/mint/types/keys.go
+/x/bank/testutil/test_helpers.go -> /x/mint/types/keys.go
+/x/capability/capability_test.go -> /x/bank/types/keys.go
+/x/capability/genesis_test.go -> /x/staking/types/keys.go
+/x/capability/genesis_test.go -> /x/bank/types/keys.go
+/x/capability/testutil/app_config.go -> /x/params/types/keys.go
+/x/capability/testutil/app_config.go -> /x/staking/types/keys.go
+/x/capability/testutil/app_config.go -> /x/auth/types/keys.go
+/x/capability/testutil/app_config.go -> /x/bank/types/keys.go
+/x/capability/testutil/app_config.go -> /x/auth/types/permissions.go
+/x/capability/testutil/app_config.go -> /x/staking/types/pool.go
+/x/capability/testutil/app_config.go -> /x/genutil/types/types.go
+/x/crisis/migrations/v2/migrate_test.go -> /x/distribution/module.go
+/x/distribution/client/testutil/suite.go -> /x/mint/types/genesis.pb.go
+/x/distribution/client/testutil/suite.go -> /x/mint/types/mint.pb.go
+/x/distribution/client/testutil/suite.go -> /x/mint/types/keys.go
+/x/distribution/keeper/allocation_test.go -> /x/bank/testutil/test_helpers.go
+/x/distribution/keeper/allocation_test.go -> /x/bank/keeper/keeper.go
+/x/distribution/keeper/delegation_test.go -> /x/bank/keeper/view.go
+/x/distribution/keeper/delegation_test.go -> /x/bank/testutil/test_helpers.go
+/x/distribution/keeper/delegation_test.go -> /x/bank/keeper/keeper.go
+/x/distribution/keeper/grpc_query_test.go -> /x/bank/testutil/test_helpers.go
+/x/distribution/keeper/grpc_query_test.go -> /x/bank/keeper/keeper.go
+/x/distribution/keeper/keeper_test.go -> /x/bank/keeper/view.go
+/x/distribution/keeper/keeper_test.go -> /x/bank/testutil/test_helpers.go
+/x/distribution/keeper/keeper_test.go -> /x/bank/keeper/keeper.go
+/x/distribution/keeper/msg_server_test.go -> /x/bank/keeper/view.go
+/x/distribution/simulation/operations_test.go -> /x/bank/keeper/keeper.go
+/x/distribution/simulation/operations_test.go -> /x/bank/testutil/test_helpers.go
+/x/distribution/testutil/app_config.go -> /x/bank/types/keys.go
+/x/distribution/testutil/app_config.go -> /x/genutil/types/types.go
+/x/distribution/testutil/app_config.go -> /x/mint/types/keys.go
+/x/evidence/keeper/infraction_test.go -> /x/slashing/keeper/keeper.go
+/x/evidence/keeper/infraction_test.go -> /x/slashing/keeper/unjail.go
+/x/evidence/keeper/infraction_test.go -> /x/bank/keeper/view.go
+/x/evidence/keeper/infraction_test.go -> /x/mint/types/keys.go
+/x/evidence/keeper/infraction_test.go -> /x/slashing/keeper/infractions.go
+/x/evidence/keeper/infraction_test.go -> /x/bank/keeper/keeper.go
+/x/evidence/keeper/infraction_test.go -> /x/slashing/keeper/signing_info.go
+/x/evidence/testutil/app_config.go -> /x/params/types/keys.go
+/x/evidence/testutil/app_config.go -> /x/slashing/types/keys.go
+/x/evidence/testutil/app_config.go -> /x/bank/types/keys.go
+/x/evidence/testutil/app_config.go -> /x/genutil/types/types.go
+/x/evidence/testutil/app_config.go -> /x/mint/types/keys.go
+/x/feegrant/client/testutil/suite.go -> /x/gov/client/testutil/helpers.go
+/x/feegrant/client/testutil/suite.go -> /x/gov/types/v1beta1/tx.pb.go
+/x/feegrant/client/testutil/suite.go -> /x/gov/types/v1/tx.pb.go
+/x/feegrant/client/testutil/suite.go -> /x/gov/types/v1beta1/proposal.go
+/x/feegrant/filtered_fee_test.go -> /x/bank/types/tx.pb.go
+/x/feegrant/simulation/operations_test.go -> /x/bank/testutil/test_helpers.go
+/x/feegrant/simulation/operations_test.go -> /x/bank/keeper/keeper.go
+/x/feegrant/testutil/app_config.go -> /x/params/types/keys.go
+/x/feegrant/testutil/app_config.go -> /x/staking/types/keys.go
+/x/feegrant/testutil/app_config.go -> /x/bank/types/keys.go
+/x/feegrant/testutil/app_config.go -> /x/staking/types/pool.go
+/x/feegrant/testutil/app_config.go -> /x/genutil/types/types.go
+/x/feegrant/testutil/app_config.go -> /x/mint/types/keys.go
+/x/gov/abci_test.go -> /x/bank/keeper/view.go
+/x/gov/client/cli/parse_test.go -> /x/bank/types/codec.go
+/x/gov/client/cli/parse_test.go -> /x/bank/types/tx.pb.go
+/x/gov/genesis_test.go -> /x/bank/types/keys.go
+/x/gov/genesis_test.go -> /x/bank/keeper/view.go
+/x/gov/genesis_test.go -> /x/distribution/types/keys.go
+/x/gov/genesis_test.go -> /x/distribution/keeper/genesis.go
+/x/gov/genesis_test.go -> /x/bank/keeper/keeper.go
+/x/gov/keeper/common_test.go -> /x/bank/types/msgs.go
+/x/gov/keeper/deposit_test.go -> /x/bank/keeper/view.go
+/x/gov/keeper/keeper_test.go -> /x/mint/types/keys.go
+/x/gov/keeper/keeper_test.go -> /x/bank/keeper/keeper.go
+/x/gov/keeper/msg_server_test.go -> /x/bank/types/tx.pb.go
+/x/gov/keeper/msg_server_test.go -> /x/bank/types/genesis.pb.go
+/x/gov/migrations/v3/store_test.go -> /x/upgrade/types/proposal.go
+/x/gov/migrations/v3/store_test.go -> /x/upgrade/module.go
+/x/gov/migrations/v3/store_test.go -> /x/upgrade/types/upgrade.pb.go
+/x/gov/migrations/v4/store_test.go -> /x/upgrade/module.go
+/x/gov/simulation/operations_test.go -> /x/mint/types/minter.go
+/x/gov/simulation/operations_test.go -> /x/mint/keeper/keeper.go
+/x/gov/simulation/operations_test.go -> /x/mint/types/params.go
+/x/gov/simulation/operations_test.go -> /x/bank/testutil/test_helpers.go
+/x/group/keeper/keeper_test.go -> /x/mint/types/keys.go
+/x/group/module/abci_test.go -> /x/staking/keeper/keeper.go
+/x/group/testutil/app_config.go -> /x/params/types/keys.go
+/x/group/testutil/app_config.go -> /x/staking/types/keys.go
+/x/group/testutil/app_config.go -> /x/staking/types/pool.go
+/x/group/testutil/app_config.go -> /x/genutil/types/types.go
+/x/group/testutil/app_config.go -> /x/mint/types/keys.go
+/x/mint/testutil/app_config.go -> /x/staking/types/keys.go
+/x/mint/testutil/app_config.go -> /x/bank/types/keys.go
+/x/mint/testutil/app_config.go -> /x/staking/types/pool.go
+/x/mint/testutil/app_config.go -> /x/genutil/types/types.go
+/x/nft/simulation/operations_test.go -> /x/bank/testutil/test_helpers.go
+/x/nft/simulation/operations_test.go -> /x/staking/keeper/keeper.go
+/x/nft/simulation/operations_test.go -> /x/bank/keeper/keeper.go
+/x/nft/simulation/operations_test.go -> /x/staking/keeper/power_reduction.go
+/x/nft/testutil/app_config.go -> /x/params/types/keys.go
+/x/nft/testutil/app_config.go -> /x/staking/types/keys.go
+/x/nft/testutil/app_config.go -> /x/bank/types/keys.go
+/x/nft/testutil/app_config.go -> /x/staking/types/pool.go
+/x/nft/testutil/app_config.go -> /x/genutil/types/types.go
+/x/nft/testutil/app_config.go -> /x/mint/types/keys.go
+/x/params/proposal_handler_test.go -> /x/staking/types/keys.go
+/x/params/proposal_handler_test.go -> /x/staking/types/params_legacy.go
+/x/params/testutil/app_config.go -> /x/staking/types/keys.go
+/x/params/testutil/app_config.go -> /x/auth/types/keys.go
+/x/params/testutil/app_config.go -> /x/bank/types/keys.go
+/x/params/testutil/app_config.go -> /x/auth/types/permissions.go
+/x/params/testutil/app_config.go -> /x/staking/types/pool.go
+/x/params/testutil/app_config.go -> /x/genutil/types/types.go
+/x/slashing/abci_test.go -> /x/bank/keeper/view.go
+/x/slashing/abci_test.go -> /x/bank/keeper/keeper.go
+/x/slashing/app_test.go -> /x/bank/keeper/view.go
+/x/slashing/app_test.go -> /x/bank/keeper/keeper.go
+/x/slashing/simulation/operations_test.go -> /x/mint/types/minter.go
+/x/slashing/simulation/operations_test.go -> /x/bank/keeper/keeper.go
+/x/slashing/simulation/operations_test.go -> /x/mint/keeper/keeper.go
+/x/slashing/simulation/operations_test.go -> /x/mint/types/params.go
+/x/slashing/simulation/operations_test.go -> /x/bank/testutil/test_helpers.go
+/x/slashing/testutil/app_config.go -> /x/bank/types/keys.go
+/x/slashing/testutil/app_config.go -> /x/genutil/types/types.go
+/x/slashing/testutil/app_config.go -> /x/mint/types/keys.go
+/x/staking/app_test.go -> /x/bank/types/genesis.pb.go
+/x/staking/keeper/delegation_test.go -> /x/bank/keeper/view.go
+/x/staking/keeper/delegation_test.go -> /x/bank/testutil/test_helpers.go
+/x/staking/keeper/genesis_test.go -> /x/bank/testutil/test_helpers.go
+/x/staking/keeper/grpc_query_test.go -> /x/bank/keeper/view.go
+/x/staking/keeper/msg_server_test.go -> /x/bank/keeper/view.go
+/x/staking/keeper/msg_server_test.go -> /x/bank/testutil/test_helpers.go
+/x/staking/keeper/slash_test.go -> /x/bank/keeper/view.go
+/x/staking/keeper/slash_test.go -> /x/bank/testutil/test_helpers.go
+/x/staking/keeper/validator_test.go -> /x/bank/testutil/test_helpers.go
+/x/staking/simulation/operations_test.go -> /x/mint/types/minter.go
+/x/staking/simulation/operations_test.go -> /x/mint/keeper/keeper.go
+/x/staking/simulation/operations_test.go -> /x/mint/types/params.go
+/x/staking/simulation/operations_test.go -> /x/bank/testutil/test_helpers.go
+/x/staking/simulation/operations_test.go -> /x/bank/types/genesis.pb.go
+#+end_example
