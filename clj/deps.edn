@@ -1,2 +1,4 @@
 {:paths ["src/main/clojure"]
- :deps  {org.clojure/clojure {:mvn/version "1.10.1"}}}
+ :deps  {org.clojure/clojure {:mvn/version "1.10.1"}
+         macroz/tangle       {:mvn/version "0.2.2"}
+         }}

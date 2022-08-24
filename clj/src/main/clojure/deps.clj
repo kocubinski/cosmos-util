@@ -1,14 +1,17 @@
 (ns deps
   (:require [clojure.xml :as xml]
             [clojure.zip :as zip]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            [clojure.java.io :as io]
+            [clojure.set :as set]
+            [tangle.core :as tangle]))
 
 (defn clean-path [p]
   (string/replace p "$PROJECT_DIR$" ""))
 
 (defn module-from-path [p]
   (let [[_ _ mod] (string/split p #"/")]
-    (str "/x/" mod)))
+    (str "/x/" mod "/")))
 
 (defn test-file? [p]
   (or (string/ends-with? p "_test.go")
@@ -44,15 +47,39 @@
 
 (def dependency-xml "./x-deps.xml")
 
-(defn dep-graph [mode]
+(defn graph-from-edges [edges]
+  (reduce (fn [g [m dependency]]
+            (update g m (fnil conj #{}) dependency))
+          {}
+          edges))
+
+(defn edges-from-graph [g]
+  (mapcat (fn [[n es]]
+            (map (partial vector n) es))
+          g))
+
+(defn dep-edges [mode]
   (->> (modules dependency-xml)
        (mapcat (partial module-report mode dependency-xml))
        (map (partial map module-from-path))
-       (reduce (fn [g [m dependency]]
-                 (update g m (fnil conj #{}) dependency))
-               {})))
+       (set)))
+
+(def dep-graph (comp graph-from-edges dep-edges))
 
 (defn print-report [mode]
   (doseq [m (modules dependency-xml)]
     (doseq [[file dep] (module-report mode dependency-xml m)]
       (println file "->" dep))))
+
+(defn test-only-edges
+  []
+  (set/difference (dep-edges :all) (dep-edges :prod)))
+
+(defn visualize [edges]
+  (-> (tangle/graph->dot
+       (set (map first edges))
+       edges
+       {:directed? true}
+       )
+      (tangle/dot->image "png")
+      (io/copy (io/file "./out.png"))))
