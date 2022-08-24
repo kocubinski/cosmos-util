@@ -621,7 +621,8 @@ deps> (print-files :prod)
 
 ** Full dependency graph
 
-Finally, across the entier SDK which modules depend on which? Our goal is this should be a DAG.
+Finally, across the entier SDK which modules depend on which? Our goal is that the graph output
+should be a DAG.
 
 #+begin_example
 deps> (visualize (dep-edges :all))
