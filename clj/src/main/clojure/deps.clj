@@ -91,6 +91,23 @@
          (filter (fn [[a b]]
                    (test-only? [(module-from-path a) (module-from-path b)]))))))
 
+(defn cyclic-dependencies
+  [g]
+  (->> g
+       (reduce (fn [cd [m deps]]
+                 (->> deps
+                      (filter (fn [dep]
+                            ;; for each dep of m, where dep also depends on m
+                                ((g dep) m)))
+                      (map (comp sort (partial vector m)))
+                      (concat cd)))
+               (list))
+       (distinct)))
+
+(defn print-cyclic [edges]
+  (doseq [[a b] (sort-by first edges)]
+    (println a "<->" b)))
+
 (defn visualize [edges]
   (-> (tangle/graph->dot
        (set (map first edges))

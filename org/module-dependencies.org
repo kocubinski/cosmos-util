@@ -8,20 +8,98 @@ below the REPL command which generated them.
 
 The current XML export was generated from ~main~ on 2022-08-24.
 
-** Full dependency graph
+** Cyclic dependencies
 
-Which modules depend on which?
+Which SDK modules have formed cyclic dependency relationships which eachother? We'll need a strategy
+to address each of these.
 
 #+begin_example
-deps> (visualize (dep-edges :all))
+deps> (-> (dep-edges :prod) graph-from-edges cyclic-dependencies print-cyclic)
+
+/x/auth/ <-> /x/authz/
+/x/auth/ <-> /x/feegrant/
+/x/auth/ <-> /x/staking/
+/x/auth/ <-> /x/simulation/
+/x/auth/ <-> /x/bank/
+/x/auth/ <-> /x/gov/
+/x/authz/ <-> /x/staking/
+/x/authz/ <-> /x/bank/
+/x/authz/ <-> /x/gov/
+/x/distribution/ <-> /x/staking/
+/x/gov/ <-> /x/params/
+/x/gov/ <-> /x/staking/
+/x/simulation/ <-> /x/staking/
 #+end_example
-
-[[./module-dependencies/all.png]]
-
 ** Test phase only dependencies
 
-Answers the question "What dependencies are introduced in the test phase only?".  These can be
-addressed immediately, probably by moving the source files to the ~/tests~ folder.
+Answers the question "What dependencies are introduced in the test phase only, and in which files?".
+The set of dependencies identified by the function ~diff(all, prod)~.
+
+These can be addressed immediately, probably by moving the source files to the ~/tests~ folder. Each
+line represents an import statement in a particular file declaring a dependency from one module to
+another which is *not* present in production.
+
+Which modules?
+
+#+begin_example
+deps> (->> (set/difference (dep-edges :all) (dep-edges :prod)) (sort-by first) print-edges)
+
+/x/auth/ -> /x/genutil/
+/x/auth/ -> /x/mint/
+/x/authz/ -> /x/genutil/
+/x/authz/ -> /x/mint/
+/x/authz/ -> /x/params/
+/x/bank/ -> /x/staking/
+/x/bank/ -> /x/mint/
+/x/capability/ -> /x/genutil/
+/x/capability/ -> /x/params/
+/x/capability/ -> /x/staking/
+/x/capability/ -> /x/auth/
+/x/capability/ -> /x/bank/
+/x/crisis/ -> /x/distribution/
+/x/distribution/ -> /x/mint/
+/x/distribution/ -> /x/bank/
+/x/distribution/ -> /x/genutil/
+/x/evidence/ -> /x/mint/
+/x/evidence/ -> /x/bank/
+/x/evidence/ -> /x/slashing/
+/x/evidence/ -> /x/params/
+/x/evidence/ -> /x/genutil/
+/x/feegrant/ -> /x/genutil/
+/x/feegrant/ -> /x/bank/
+/x/feegrant/ -> /x/mint/
+/x/feegrant/ -> /x/staking/
+/x/feegrant/ -> /x/params/
+/x/feegrant/ -> /x/gov/
+/x/gov/ -> /x/upgrade/
+/x/gov/ -> /x/distribution/
+/x/gov/ -> /x/bank/
+/x/gov/ -> /x/mint/
+/x/group/ -> /x/params/
+/x/group/ -> /x/genutil/
+/x/group/ -> /x/mint/
+/x/group/ -> /x/staking/
+/x/mint/ -> /x/bank/
+/x/mint/ -> /x/genutil/
+/x/mint/ -> /x/staking/
+/x/nft/ -> /x/staking/
+/x/nft/ -> /x/bank/
+/x/nft/ -> /x/params/
+/x/nft/ -> /x/genutil/
+/x/nft/ -> /x/mint/
+/x/params/ -> /x/genutil/
+/x/params/ -> /x/auth/
+/x/params/ -> /x/staking/
+/x/params/ -> /x/bank/
+/x/slashing/ -> /x/bank/
+/x/slashing/ -> /x/mint/
+/x/slashing/ -> /x/genutil/
+/x/staking/ -> /x/mint/
+/x/staking/ -> /x/bank/
+;; => nil
+#+end_example
+
+Which files?
 
 #+begin_example
 deps> (print-edges (novel-test-refs))
@@ -170,4 +248,514 @@ deps> (print-edges (novel-test-refs))
 /x/staking/simulation/operations_test.go -> /x/mint/types/params.go
 /x/staking/simulation/operations_test.go -> /x/bank/testutil/test_helpers.go
 /x/staking/simulation/operations_test.go -> /x/bank/types/genesis.pb.go
+#+end_example
+
+** Prod dependency graph
+
+Excluding test files, which modules depend on which?
+
+#+begin_example
+deps> (visualize (dep-edges :prod))
+#+end_example
+
+[[./module-dependencies/prod.png]]
+
+#+begin_example
+deps> (->> (dep-edges :prod) (sort-by first) (print-edges))
+
+/x/auth/ -> /x/simulation/
+/x/auth/ -> /x/authz/
+/x/auth/ -> /x/params/
+/x/auth/ -> /x/bank/
+/x/auth/ -> /x/gov/
+/x/auth/ -> /x/staking/
+/x/auth/ -> /x/feegrant/
+/x/authz/ -> /x/bank/
+/x/authz/ -> /x/simulation/
+/x/authz/ -> /x/auth/
+/x/authz/ -> /x/gov/
+/x/authz/ -> /x/staking/
+/x/bank/ -> /x/authz/
+/x/bank/ -> /x/auth/
+/x/bank/ -> /x/distribution/
+/x/bank/ -> /x/params/
+/x/bank/ -> /x/simulation/
+/x/bank/ -> /x/gov/
+/x/crisis/ -> /x/params/
+/x/crisis/ -> /x/gov/
+/x/crisis/ -> /x/auth/
+/x/crisis/ -> /x/authz/
+/x/distribution/ -> /x/params/
+/x/distribution/ -> /x/staking/
+/x/distribution/ -> /x/gov/
+/x/distribution/ -> /x/auth/
+/x/distribution/ -> /x/simulation/
+/x/distribution/ -> /x/authz/
+/x/evidence/ -> /x/auth/
+/x/evidence/ -> /x/staking/
+/x/evidence/ -> /x/authz/
+/x/feegrant/ -> /x/simulation/
+/x/feegrant/ -> /x/authz/
+/x/feegrant/ -> /x/auth/
+/x/genutil/ -> /x/auth/
+/x/genutil/ -> /x/gov/
+/x/genutil/ -> /x/bank/
+/x/genutil/ -> /x/staking/
+/x/gov/ -> /x/auth/
+/x/gov/ -> /x/authz/
+/x/gov/ -> /x/simulation/
+/x/gov/ -> /x/staking/
+/x/gov/ -> /x/params/
+/x/group/ -> /x/simulation/
+/x/group/ -> /x/authz/
+/x/group/ -> /x/auth/
+/x/group/ -> /x/bank/
+/x/mint/ -> /x/auth/
+/x/mint/ -> /x/params/
+/x/mint/ -> /x/authz/
+/x/mint/ -> /x/gov/
+/x/mint/ -> /x/simulation/
+/x/nft/ -> /x/simulation/
+/x/nft/ -> /x/auth/
+/x/params/ -> /x/simulation/
+/x/params/ -> /x/gov/
+/x/simulation/ -> /x/auth/
+/x/simulation/ -> /x/staking/
+/x/slashing/ -> /x/staking/
+/x/slashing/ -> /x/distribution/
+/x/slashing/ -> /x/simulation/
+/x/slashing/ -> /x/params/
+/x/slashing/ -> /x/auth/
+/x/slashing/ -> /x/authz/
+/x/slashing/ -> /x/gov/
+/x/staking/ -> /x/gov/
+/x/staking/ -> /x/auth/
+/x/staking/ -> /x/authz/
+/x/staking/ -> /x/params/
+/x/staking/ -> /x/distribution/
+/x/staking/ -> /x/simulation/
+/x/upgrade/ -> /x/auth/
+/x/upgrade/ -> /x/gov/
+/x/upgrade/ -> /x/authz/
+#+end_example
+
+Which files depends on which files?
+
+#+begin_example
+deps> (print-files :prod)
+
+/x/auth/exported/exported.go -> /x/params/types/paramset.go
+/x/auth/keeper/msg_server.go -> /x/gov/types/errors.go
+/x/auth/migrations/v043/store.go -> /x/staking/types/staking.pb.go
+/x/auth/migrations/v043/store.go -> /x/staking/types/query.pb.go
+/x/auth/migrations/v043/store.go -> /x/bank/types/query.pb.go
+/x/auth/module.go -> /x/gov/types/keys.go
+/x/auth/simulation/params.go -> /x/simulation/params.go
+/x/auth/tx/module/module.go -> /x/feegrant/keeper/keeper.go
+/x/auth/types/codec.go -> /x/authz/codec/cdc.go
+/x/auth/types/params_legacy.go -> /x/params/types/paramset.go
+/x/auth/types/params_legacy.go -> /x/params/types/table.go
+/x/auth/vesting/types/codec.go -> /x/authz/codec/cdc.go
+/x/authz/client/cli/query.go -> /x/bank/types/authz.pb.go
+/x/authz/client/cli/query.go -> /x/bank/types/send_authorization.go
+/x/authz/client/cli/tx.go -> /x/staking/types/staking.pb.go
+/x/authz/client/cli/tx.go -> /x/staking/types/authz.go
+/x/authz/client/cli/tx.go -> /x/staking/types/query.pb.go
+/x/authz/client/cli/tx.go -> /x/staking/types/authz.pb.go
+/x/authz/client/cli/tx.go -> /x/bank/types/send_authorization.go
+/x/authz/client/cli/tx.go -> /x/bank/types/authz.pb.go
+/x/authz/client/cli/tx.go -> /x/auth/client/tx.go
+/x/authz/expected_keepers.go -> /x/auth/types/account.go
+/x/authz/msgs.go -> /x/auth/migrations/legacytx/stdsign.go
+/x/authz/simulation/genesis.go -> /x/bank/types/send_authorization.go
+/x/authz/simulation/genesis.go -> /x/gov/types/v1/tx.pb.go
+/x/authz/simulation/operations.go -> /x/auth/tx/config.go
+/x/authz/simulation/operations.go -> /x/bank/types/tx.pb.go
+/x/authz/simulation/operations.go -> /x/bank/types/send_authorization.go
+/x/authz/simulation/operations.go -> /x/bank/types/msgs.go
+/x/authz/simulation/operations.go -> /x/bank/types/authz.pb.go
+/x/authz/simulation/operations.go -> /x/simulation/operation.go
+/x/authz/simulation/operations.go -> /x/auth/types/account.go
+/x/authz/simulation/operations.go -> /x/auth/tx/mode_handler.go
+/x/bank/exported/exported.go -> /x/params/types/paramset.go
+/x/bank/keeper/keeper.go -> /x/auth/types/account.go
+/x/bank/keeper/keeper.go -> /x/auth/types/permissions.go
+/x/bank/keeper/msg_server.go -> /x/gov/types/errors.go
+/x/bank/migrations/v1/types.go -> /x/auth/migrations/v042/types.go
+/x/bank/migrations/v2/store.go -> /x/auth/migrations/v042/types.go
+/x/bank/module.go -> /x/gov/types/keys.go
+/x/bank/module.go -> /x/auth/types/account.go
+/x/bank/module.go -> /x/auth/types/permissions.go
+/x/bank/simulation/operations.go -> /x/distribution/types/keys.go
+/x/bank/simulation/operations.go -> /x/simulation/operation.go
+/x/bank/simulation/operations.go -> /x/auth/types/account.go
+/x/bank/simulation/params.go -> /x/simulation/params.go
+/x/bank/types/codec.go -> /x/authz/authorizations.go
+/x/bank/types/codec.go -> /x/authz/codec/cdc.go
+/x/bank/types/expected_keepers.go -> /x/auth/types/permissions.go
+/x/bank/types/expected_keepers.go -> /x/auth/types/account.go
+/x/bank/types/params_legacy.go -> /x/params/types/paramset.go
+/x/bank/types/params_legacy.go -> /x/params/types/table.go
+/x/bank/types/send_authorization.go -> /x/authz/authorizations.go
+/x/crisis/exported/exported.go -> /x/params/types/paramset.go
+/x/crisis/keeper/msg_server.go -> /x/gov/types/errors.go
+/x/crisis/module.go -> /x/auth/types/keys.go
+/x/crisis/module.go -> /x/gov/types/keys.go
+/x/crisis/module.go -> /x/auth/types/account.go
+/x/crisis/types/codec.go -> /x/authz/codec/cdc.go
+/x/crisis/types/legacy_params.go -> /x/params/types/paramset.go
+/x/crisis/types/legacy_params.go -> /x/params/types/table.go
+/x/distribution/exported/exported.go -> /x/params/types/paramset.go
+/x/distribution/keeper/alias_functions.go -> /x/auth/types/account.go
+/x/distribution/keeper/allocation.go -> /x/auth/types/account.go
+/x/distribution/keeper/allocation.go -> /x/staking/types/exported.go
+/x/distribution/keeper/delegation.go -> /x/staking/types/exported.go
+/x/distribution/keeper/genesis.go -> /x/auth/types/account.go
+/x/distribution/keeper/grpc_query.go -> /x/staking/types/exported.go
+/x/distribution/keeper/hooks.go -> /x/staking/types/expected_keepers.go
+/x/distribution/keeper/invariants.go -> /x/auth/types/account.go
+/x/distribution/keeper/invariants.go -> /x/staking/types/delegation.go
+/x/distribution/keeper/invariants.go -> /x/staking/types/exported.go
+/x/distribution/keeper/msg_server.go -> /x/gov/types/errors.go
+/x/distribution/keeper/validator.go -> /x/staking/types/exported.go
+/x/distribution/migrations/v042/types.go -> /x/auth/migrations/v042/types.go
+/x/distribution/migrations/v043/helpers.go -> /x/auth/migrations/v042/types.go
+/x/distribution/module.go -> /x/staking/types/expected_keepers.go
+/x/distribution/module.go -> /x/gov/types/keys.go
+/x/distribution/module.go -> /x/auth/types/account.go
+/x/distribution/module.go -> /x/auth/types/keys.go
+/x/distribution/simulation/operations.go -> /x/auth/tx/config.go
+/x/distribution/simulation/operations.go -> /x/staking/types/delegation.go
+/x/distribution/simulation/operations.go -> /x/staking/types/exported.go
+/x/distribution/simulation/operations.go -> /x/staking/types/validator.go
+/x/distribution/simulation/operations.go -> /x/simulation/operation.go
+/x/distribution/simulation/operations.go -> /x/auth/types/account.go
+/x/distribution/simulation/operations.go -> /x/auth/tx/mode_handler.go
+/x/distribution/simulation/operations.go -> /x/simulation/util.go
+/x/distribution/simulation/params.go -> /x/simulation/params.go
+/x/distribution/types/codec.go -> /x/authz/codec/cdc.go
+/x/distribution/types/expected_keepers.go -> /x/staking/types/staking.pb.go
+/x/distribution/types/expected_keepers.go -> /x/auth/types/account.go
+/x/distribution/types/expected_keepers.go -> /x/staking/types/exported.go
+/x/distribution/types/params_legacy.go -> /x/params/types/paramset.go
+/x/distribution/types/params_legacy.go -> /x/params/types/table.go
+/x/evidence/keeper/infraction.go -> /x/staking/types/exported.go
+/x/evidence/spec/06_begin_block.md -> /x/staking/spec/02_state_transitions.md
+/x/evidence/types/codec.go -> /x/authz/codec/cdc.go
+/x/evidence/types/expected_keepers.go -> /x/staking/types/staking.pb.go
+/x/evidence/types/expected_keepers.go -> /x/auth/types/account.go
+/x/evidence/types/expected_keepers.go -> /x/staking/types/exported.go
+/x/feegrant/codec.go -> /x/authz/codec/cdc.go
+/x/feegrant/expected_keepers.go -> /x/auth/types/account.go
+/x/feegrant/keeper/keeper.go -> /x/auth/ante/expected_keepers.go
+/x/feegrant/msgs.go -> /x/auth/migrations/legacytx/stdsign.go
+/x/feegrant/simulation/operations.go -> /x/auth/tx/config.go
+/x/feegrant/simulation/operations.go -> /x/simulation/operation.go
+/x/feegrant/simulation/operations.go -> /x/auth/types/account.go
+/x/feegrant/simulation/operations.go -> /x/auth/tx/mode_handler.go
+/x/feegrant/simulation/operations.go -> /x/simulation/util.go
+/x/feegrant/spec/01_concepts.md -> /x/auth/spec/03_antehandlers.md
+/x/genutil/client/cli/gentx.go -> /x/staking/client/cli/flags.go
+/x/genutil/client/cli/gentx.go -> /x/staking/client/cli/tx.go
+/x/genutil/client/cli/gentx.go -> /x/auth/client/tx.go
+/x/genutil/client/cli/init.go -> /x/staking/types/staking.pb.go
+/x/genutil/client/cli/init.go -> /x/staking/types/genesis.pb.go
+/x/genutil/client/cli/init.go -> /x/staking/types/keys.go
+/x/genutil/collect.go -> /x/staking/types/staking.pb.go
+/x/genutil/collect.go -> /x/bank/exported/exported.go
+/x/genutil/collect.go -> /x/staking/types/tx.pb.go
+/x/genutil/gentx.go -> /x/staking/types/staking.pb.go
+/x/genutil/gentx.go -> /x/staking/types/keys.go
+/x/genutil/gentx.go -> /x/staking/types/genesis.pb.go
+/x/genutil/gentx.go -> /x/bank/exported/exported.go
+/x/genutil/migrations/v043/migrate.go -> /x/bank/migrations/v1/types.go
+/x/genutil/migrations/v043/migrate.go -> /x/bank/types/genesis.pb.go
+/x/genutil/migrations/v043/migrate.go -> /x/gov/migrations/v2/keys.go
+/x/genutil/migrations/v043/migrate.go -> /x/bank/migrations/v2/json.go
+/x/genutil/migrations/v043/migrate.go -> /x/gov/types/v1beta1/genesis.pb.go
+/x/genutil/migrations/v043/migrate.go -> /x/gov/migrations/v1/types.go
+/x/genutil/migrations/v043/migrate.go -> /x/gov/migrations/v2/json.go
+/x/genutil/migrations/v043/migrate.go -> /x/bank/migrations/v2/keys.go
+/x/genutil/migrations/v046/migrate.go -> /x/gov/migrations/v2/keys.go
+/x/genutil/migrations/v046/migrate.go -> /x/staking/migrations/v3/keys.go
+/x/genutil/migrations/v046/migrate.go -> /x/staking/migrations/v2/keys.go
+/x/genutil/migrations/v046/migrate.go -> /x/gov/types/v1beta1/genesis.pb.go
+/x/genutil/migrations/v046/migrate.go -> /x/staking/types/genesis.pb.go
+/x/genutil/migrations/v046/migrate.go -> /x/staking/migrations/v3/json.go
+/x/genutil/migrations/v046/migrate.go -> /x/gov/migrations/v3/json.go
+/x/genutil/migrations/v046/migrate.go -> /x/gov/migrations/v3/keys.go
+/x/genutil/migrations/v047/migrate.go -> /x/bank/types/genesis.pb.go
+/x/genutil/migrations/v047/migrate.go -> /x/bank/types/keys.go
+/x/genutil/migrations/v047/migrate.go -> /x/bank/migrations/v4/gen_state.go
+/x/genutil/types/expected_keepers.go -> /x/bank/exported/exported.go
+/x/genutil/types/expected_keepers.go -> /x/auth/types/account.go
+/x/genutil/types/genesis_state.go -> /x/staking/types/tx.pb.go
+/x/gov/client/utils/query.go -> /x/auth/tx/query.go
+/x/gov/exported/exported.go -> /x/params/types/paramset.go
+/x/gov/genesis.go -> /x/auth/types/account.go
+/x/gov/keeper/invariants.go -> /x/auth/types/account.go
+/x/gov/keeper/keeper.go -> /x/auth/types/account.go
+/x/gov/keeper/msg_server.go -> /x/auth/types/account.go
+/x/gov/keeper/proposal.go -> /x/auth/types/account.go
+/x/gov/keeper/tally.go -> /x/staking/types/exported.go
+/x/gov/migrations/v1/types.go -> /x/auth/migrations/v042/types.go
+/x/gov/migrations/v3/convert.go -> /x/auth/types/account.go
+/x/gov/module.go -> /x/auth/types/account.go
+/x/gov/module.go -> /x/params/types/table.go
+/x/gov/simulation/operations.go -> /x/simulation/transition_matrix.go
+/x/gov/simulation/operations.go -> /x/simulation/operation.go
+/x/gov/simulation/operations.go -> /x/auth/types/account.go
+/x/gov/simulation/operations.go -> /x/simulation/util.go
+/x/gov/simulation/params.go -> /x/simulation/params.go
+/x/gov/simulation/proposals.go -> /x/simulation/params.go
+/x/gov/types/expected_keepers.go -> /x/auth/types/account.go
+/x/gov/types/expected_keepers.go -> /x/staking/types/exported.go
+/x/gov/types/v1/codec.go -> /x/authz/codec/cdc.go
+/x/gov/types/v1/params_legacy.go -> /x/params/types/paramset.go
+/x/gov/types/v1/params_legacy.go -> /x/params/types/table.go
+/x/gov/types/v1beta1/codec.go -> /x/authz/codec/cdc.go
+/x/group/codec.go -> /x/authz/codec/cdc.go
+/x/group/expected_keepers.go -> /x/auth/types/account.go
+/x/group/keeper/msg_server.go -> /x/auth/types/auth.pb.go
+/x/group/simulation/genesis.go -> /x/bank/types/tx.pb.go
+/x/group/simulation/operations.go -> /x/auth/tx/config.go
+/x/group/simulation/operations.go -> /x/simulation/operation.go
+/x/group/simulation/operations.go -> /x/auth/types/account.go
+/x/group/simulation/operations.go -> /x/auth/tx/mode_handler.go
+/x/mint/exported/exported.go -> /x/params/types/paramset.go
+/x/mint/keeper/msg_server.go -> /x/gov/types/errors.go
+/x/mint/module.go -> /x/gov/types/keys.go
+/x/mint/module.go -> /x/auth/types/account.go
+/x/mint/module.go -> /x/auth/types/keys.go
+/x/mint/simulation/params.go -> /x/simulation/params.go
+/x/mint/types/codec.go -> /x/authz/codec/cdc.go
+/x/mint/types/expected_keepers.go -> /x/auth/types/account.go
+/x/mint/types/params_legacy.go -> /x/params/types/paramset.go
+/x/mint/types/params_legacy.go -> /x/params/types/table.go
+/x/nft/expected_keepers.go -> /x/auth/types/account.go
+/x/nft/simulation/operations.go -> /x/auth/tx/config.go
+/x/nft/simulation/operations.go -> /x/simulation/operation.go
+/x/nft/simulation/operations.go -> /x/auth/types/account.go
+/x/nft/simulation/operations.go -> /x/auth/tx/mode_handler.go
+/x/params/client/cli/tx.go -> /x/gov/types/v1beta1/msgs.go
+/x/params/client/proposal_handler.go -> /x/gov/client/proposal_handler.go
+/x/params/module.go -> /x/gov/types/v1beta1/content.go
+/x/params/proposal_handler.go -> /x/gov/types/v1beta1/content.go
+/x/params/simulation/proposals.go -> /x/simulation/params.go
+/x/params/types/proposal/codec.go -> /x/gov/types/v1beta1/content.go
+/x/params/types/proposal/proposal.go -> /x/gov/types/v1beta1/proposal.go
+/x/params/types/proposal/proposal.go -> /x/gov/types/v1beta1/content.go
+/x/simulation/expected_keepers.go -> /x/auth/types/account.go
+/x/simulation/params.go -> /x/staking/types/genesis.go
+/x/simulation/params.go -> /x/staking/types/staking.pb.go
+/x/simulation/params.go -> /x/staking/types/genesis.pb.go
+/x/simulation/util.go -> /x/auth/types/account.go
+/x/slashing/exported/exported.go -> /x/params/types/paramset.go
+/x/slashing/keeper/genesis.go -> /x/staking/types/exported.go
+/x/slashing/keeper/hooks.go -> /x/staking/types/exported.go
+/x/slashing/keeper/infractions.go -> /x/staking/types/exported.go
+/x/slashing/keeper/msg_server.go -> /x/gov/types/errors.go
+/x/slashing/keeper/unjail.go -> /x/staking/types/exported.go
+/x/slashing/migrations/v042/types.go -> /x/auth/migrations/v042/types.go
+/x/slashing/migrations/v043/store.go -> /x/distribution/migrations/v043/helpers.go
+/x/slashing/module.go -> /x/staking/types/expected_keepers.go
+/x/slashing/module.go -> /x/gov/types/keys.go
+/x/slashing/module.go -> /x/auth/types/account.go
+/x/slashing/simulation/operations.go -> /x/auth/tx/config.go
+/x/slashing/simulation/operations.go -> /x/staking/types/exported.go
+/x/slashing/simulation/operations.go -> /x/staking/types/validator.go
+/x/slashing/simulation/operations.go -> /x/simulation/operation.go
+/x/slashing/simulation/operations.go -> /x/auth/types/account.go
+/x/slashing/simulation/operations.go -> /x/auth/tx/mode_handler.go
+/x/slashing/simulation/params.go -> /x/simulation/params.go
+/x/slashing/types/codec.go -> /x/authz/codec/cdc.go
+/x/slashing/types/expected_keepers.go -> /x/params/types/subspace.go
+/x/slashing/types/expected_keepers.go -> /x/staking/types/staking.pb.go
+/x/slashing/types/expected_keepers.go -> /x/auth/types/account.go
+/x/slashing/types/expected_keepers.go -> /x/params/types/table.go
+/x/slashing/types/expected_keepers.go -> /x/params/types/paramset.go
+/x/slashing/types/expected_keepers.go -> /x/staking/types/exported.go
+/x/slashing/types/params_legacy.go -> /x/params/types/paramset.go
+/x/slashing/types/params_legacy.go -> /x/params/types/table.go
+/x/staking/exported/exported.go -> /x/params/types/paramset.go
+/x/staking/keeper/genesis.go -> /x/auth/types/account.go
+/x/staking/keeper/grpc_query.go -> /x/auth/types/account.go
+/x/staking/keeper/invariants.go -> /x/auth/types/account.go
+/x/staking/keeper/msg_server.go -> /x/gov/types/errors.go
+/x/staking/keeper/pool.go -> /x/auth/types/account.go
+/x/staking/migrations/v1/types.go -> /x/auth/migrations/v042/types.go
+/x/staking/migrations/v2/store.go -> /x/auth/migrations/v042/types.go
+/x/staking/migrations/v2/store.go -> /x/distribution/migrations/v043/helpers.go
+/x/staking/migrations/v3/store.go -> /x/params/types/paramset.go
+/x/staking/migrations/v3/store.go -> /x/params/types/subspace.go
+/x/staking/migrations/v3/store.go -> /x/params/types/table.go
+/x/staking/module.go -> /x/gov/types/keys.go
+/x/staking/module.go -> /x/auth/types/account.go
+/x/staking/simulation/operations.go -> /x/simulation/operation.go
+/x/staking/simulation/operations.go -> /x/auth/types/account.go
+/x/staking/simulation/operations.go -> /x/simulation/util.go
+/x/staking/simulation/params.go -> /x/simulation/params.go
+/x/staking/types/authz.go -> /x/authz/errors.go
+/x/staking/types/authz.go -> /x/authz/authorizations.go
+/x/staking/types/codec.go -> /x/authz/authorizations.go
+/x/staking/types/codec.go -> /x/authz/codec/cdc.go
+/x/staking/types/expected_keepers.go -> /x/auth/types/account.go
+/x/staking/types/params_legacy.go -> /x/params/types/paramset.go
+/x/staking/types/params_legacy.go -> /x/params/types/table.go
+/x/upgrade/client/cli/parse.go -> /x/gov/client/cli/tx.go
+/x/upgrade/client/cli/parse.go -> /x/gov/types/v1beta1/content.go
+/x/upgrade/client/cli/tx.go -> /x/gov/types/v1beta1/msgs.go
+/x/upgrade/client/cli/tx.go -> /x/gov/client/cli/tx.go
+/x/upgrade/client/proposal_handler.go -> /x/gov/client/proposal_handler.go
+/x/upgrade/handler.go -> /x/gov/types/v1beta1/content.go
+/x/upgrade/keeper/msg_server.go -> /x/gov/types/errors.go
+/x/upgrade/module.go -> /x/gov/types/v1beta1/content.go
+/x/upgrade/module.go -> /x/gov/types/keys.go
+/x/upgrade/module.go -> /x/auth/types/account.go
+/x/upgrade/types/codec.go -> /x/gov/types/v1beta1/content.go
+/x/upgrade/types/codec.go -> /x/authz/codec/cdc.go
+/x/upgrade/types/msgs.go -> /x/auth/migrations/legacytx/stdsign.go
+/x/upgrade/types/proposal.go -> /x/gov/types/v1beta1/proposal.go
+/x/upgrade/types/proposal.go -> /x/gov/types/v1beta1/content.go
+#+end_example
+
+** Full dependency graph
+
+Which modules depend on which?
+
+#+begin_example
+deps> (visualize (dep-edges :all))
+#+end_example
+
+[[./module-dependencies/all.png]]
+
+#+begin_example
+deps> (->> (dep-edges :all) (sort-by first) (print-edges))
+
+/x/auth/ -> /x/simulation/
+/x/auth/ -> /x/authz/
+/x/auth/ -> /x/params/
+/x/auth/ -> /x/genutil/
+/x/auth/ -> /x/mint/
+/x/auth/ -> /x/bank/
+/x/auth/ -> /x/gov/
+/x/auth/ -> /x/staking/
+/x/auth/ -> /x/feegrant/
+/x/authz/ -> /x/bank/
+/x/authz/ -> /x/simulation/
+/x/authz/ -> /x/genutil/
+/x/authz/ -> /x/auth/
+/x/authz/ -> /x/gov/
+/x/authz/ -> /x/mint/
+/x/authz/ -> /x/params/
+/x/authz/ -> /x/staking/
+/x/bank/ -> /x/staking/
+/x/bank/ -> /x/authz/
+/x/bank/ -> /x/auth/
+/x/bank/ -> /x/distribution/
+/x/bank/ -> /x/params/
+/x/bank/ -> /x/simulation/
+/x/bank/ -> /x/gov/
+/x/bank/ -> /x/mint/
+/x/capability/ -> /x/genutil/
+/x/capability/ -> /x/params/
+/x/capability/ -> /x/staking/
+/x/capability/ -> /x/auth/
+/x/capability/ -> /x/bank/
+/x/crisis/ -> /x/params/
+/x/crisis/ -> /x/gov/
+/x/crisis/ -> /x/auth/
+/x/crisis/ -> /x/authz/
+/x/crisis/ -> /x/distribution/
+/x/distribution/ -> /x/params/
+/x/distribution/ -> /x/staking/
+/x/distribution/ -> /x/gov/
+/x/distribution/ -> /x/mint/
+/x/distribution/ -> /x/auth/
+/x/distribution/ -> /x/simulation/
+/x/distribution/ -> /x/authz/
+/x/distribution/ -> /x/bank/
+/x/distribution/ -> /x/genutil/
+/x/evidence/ -> /x/mint/
+/x/evidence/ -> /x/bank/
+/x/evidence/ -> /x/slashing/
+/x/evidence/ -> /x/auth/
+/x/evidence/ -> /x/params/
+/x/evidence/ -> /x/genutil/
+/x/evidence/ -> /x/staking/
+/x/evidence/ -> /x/authz/
+/x/feegrant/ -> /x/genutil/
+/x/feegrant/ -> /x/simulation/
+/x/feegrant/ -> /x/bank/
+/x/feegrant/ -> /x/authz/
+/x/feegrant/ -> /x/mint/
+/x/feegrant/ -> /x/auth/
+/x/feegrant/ -> /x/staking/
+/x/feegrant/ -> /x/params/
+/x/feegrant/ -> /x/gov/
+/x/genutil/ -> /x/auth/
+/x/genutil/ -> /x/gov/
+/x/genutil/ -> /x/bank/
+/x/genutil/ -> /x/staking/
+/x/gov/ -> /x/upgrade/
+/x/gov/ -> /x/auth/
+/x/gov/ -> /x/authz/
+/x/gov/ -> /x/distribution/
+/x/gov/ -> /x/simulation/
+/x/gov/ -> /x/staking/
+/x/gov/ -> /x/bank/
+/x/gov/ -> /x/params/
+/x/gov/ -> /x/mint/
+/x/group/ -> /x/simulation/
+/x/group/ -> /x/authz/
+/x/group/ -> /x/params/
+/x/group/ -> /x/auth/
+/x/group/ -> /x/genutil/
+/x/group/ -> /x/mint/
+/x/group/ -> /x/staking/
+/x/group/ -> /x/bank/
+/x/mint/ -> /x/bank/
+/x/mint/ -> /x/genutil/
+/x/mint/ -> /x/auth/
+/x/mint/ -> /x/params/
+/x/mint/ -> /x/authz/
+/x/mint/ -> /x/staking/
+/x/mint/ -> /x/gov/
+/x/mint/ -> /x/simulation/
+/x/nft/ -> /x/simulation/
+/x/nft/ -> /x/staking/
+/x/nft/ -> /x/bank/
+/x/nft/ -> /x/auth/
+/x/nft/ -> /x/params/
+/x/nft/ -> /x/genutil/
+/x/nft/ -> /x/mint/
+/x/params/ -> /x/simulation/
+/x/params/ -> /x/genutil/
+/x/params/ -> /x/auth/
+/x/params/ -> /x/staking/
+/x/params/ -> /x/bank/
+/x/params/ -> /x/gov/
+/x/simulation/ -> /x/auth/
+/x/simulation/ -> /x/staking/
+/x/slashing/ -> /x/staking/
+/x/slashing/ -> /x/distribution/
+/x/slashing/ -> /x/simulation/
+/x/slashing/ -> /x/bank/
+/x/slashing/ -> /x/mint/
+/x/slashing/ -> /x/params/
+/x/slashing/ -> /x/auth/
+/x/slashing/ -> /x/genutil/
+/x/slashing/ -> /x/authz/
+/x/slashing/ -> /x/gov/
+/x/staking/ -> /x/gov/
+/x/staking/ -> /x/auth/
+/x/staking/ -> /x/mint/
+/x/staking/ -> /x/bank/
+/x/staking/ -> /x/authz/
+/x/staking/ -> /x/params/
+/x/staking/ -> /x/distribution/
+/x/staking/ -> /x/simulation/
+/x/upgrade/ -> /x/auth/
+/x/upgrade/ -> /x/gov/
+/x/upgrade/ -> /x/authz/
 #+end_example
