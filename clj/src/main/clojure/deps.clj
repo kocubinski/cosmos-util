@@ -29,6 +29,9 @@
        (filter (fn [{:keys [file dep]}]
                  (and (string/includes? file module)
                       (not (string/includes? dep module)))))
+       ;; uncomment to exclude pb generated files for RFC research
+       ;; (filter (fn [{:keys [dep]}]
+       ;;           (string/includes? dep ".pb.")))
        (filter (fn [{:keys [file]}]
                  (condp = mode
                    :all true
@@ -45,7 +48,7 @@
        (distinct)
        (remove #{"/x/README.md"})))
 
-(def dependency-xml "./x-deps.xml")
+(def dependency-xml "./x-deps-20230404.xml")
 
 (defn graph-from-edges [edges]
   (reduce (fn [g [m dependency]]
