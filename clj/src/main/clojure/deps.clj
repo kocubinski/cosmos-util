@@ -49,6 +49,7 @@
        (remove #{"/x/README.md"})))
 
 (def dependency-xml "./x-deps-20230404.xml")
+(def branch-xml "./x-deps-20230404-kocubinski-auth-deps.xml")
 
 (defn graph-from-edges [edges]
   (reduce (fn [g [m dependency]]
