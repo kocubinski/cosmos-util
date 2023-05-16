@@ -48,9 +48,6 @@
        (distinct)
        (remove #{"/x/README.md"})))
 
-(def dependency-xml "./x-deps-20230404.xml")
-(def branch-xml "./x-deps-20230404-kocubinski-auth-deps.xml")
-
 (defn graph-from-edges [edges]
   (reduce (fn [g [m dependency]]
             (update g m (fnil conj #{}) dependency))
@@ -62,21 +59,21 @@
             (map (partial vector n) es))
           g))
 
-(defn dep-edges [mode]
-  (->> (modules dependency-xml)
-       (mapcat (partial module-file-edges mode dependency-xml))
+(defn make-dep-edges
+  "Example usage: (make-dep-edges :prod './x-deps-rm-getsignbytes')"
+  [mode xml-file]
+  (->> (modules xml-file)
+       (mapcat (partial module-file-edges mode xml-file))
        (map (partial map module-from-path))
        (set)))
-
-(def dep-graph (comp graph-from-edges dep-edges))
 
 (defn print-edges [edges]
   (doseq [[a b] edges]
     (println a "->" b)))
 
-(defn print-files [mode]
-  (->> (modules dependency-xml)
-       (mapcat (partial module-file-edges mode dependency-xml))
+(defn print-files [mode xml-file]
+  (->> (modules xml-file)
+       (mapcat (partial module-file-edges mode xml-file))
        (print-edges)))
 
 ;; Question:
@@ -101,8 +98,9 @@
        (reduce (fn [cd [m deps]]
                  (->> deps
                       (filter (fn [dep]
-                            ;; for each dep of m, where dep also depends on m
-                                ((g dep) m)))
+                            ;; for each dep of m, where dep also depends on m ))
+                                (when-let [g-deps (g dep)]
+                                  ((g dep) m))))
                       (map (comp sort (partial vector m)))
                       (concat cd)))
                (list))
@@ -120,3 +118,21 @@
        )
       (tangle/dot->image "png")
       (io/copy (io/file "./out.png"))))
+
+
+(comment
+  (def main-xml "./x-deps-20230404.xml")
+  (def branch-xml "./x-deps-rm-getsignbytes.xml")
+  ;;
+  ;; visualize the production dependency graph
+  (visualize (make-dep-edges :prod main-xml))
+  (visualize (make-dep-edges :prod branch-xml))
+  ;;
+  ;; visualize the dependency graph with tests included
+  (visualize (make-dep-edges :all main-xml))
+  (visualize (make-dep-edges :all branch-xml))
+  ;;
+  ;; print cyclic dependencies
+  (-> (make-dep-edges :prod main-xml) graph-from-edges cyclic-dependencies print-cyclic)
+  (-> (make-dep-edges :prod branch-xml) graph-from-edges cyclic-dependencies print-cyclic)
+  )

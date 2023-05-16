@@ -1,0 +1,17 @@
+/x/auth/ <-> /x/authz/
+/x/auth/ <-> /x/group/
+/x/auth/ <-> /x/genutil/
+/x/auth/ <-> /x/staking/
+/x/auth/ <-> /x/bank/
+/x/auth/ <-> /x/gov/
+/x/authz/ <-> /x/group/
+/x/authz/ <-> /x/staking/
+/x/authz/ <-> /x/bank/
+/x/authz/ <-> /x/gov/
+/x/bank/ <-> /x/group/
+/x/distribution/ <-> /x/staking/
+/x/distribution/ <-> /x/gov/
+/x/gov/ <-> /x/group/
+/x/gov/ <-> /x/params/
+/x/gov/ <-> /x/staking/
+/x/simulation/ <-> /x/staking/

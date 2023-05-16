@@ -1,10 +1,9 @@
 #!/bin/bash
 
-set -o errexit
-
 go list ./... > pkgs.txt
 lines=`cat pkgs.txt | wc -l`
 length=$(( $lines / 4 ))
+length=$((length+1))
 split -d -l $length pkgs.txt pkgs.txt.part.
 
 #xargs --arg-file=pkgs.txt.part."$1" ruby -e 'p ARGV' go test -mod=readonly -timeout 30m -race -tags='cgo ledger test_ledger_mock' -count=1
