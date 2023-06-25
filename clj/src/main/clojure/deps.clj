@@ -32,6 +32,10 @@
        ;; uncomment to exclude pb generated files for RFC research
        ;; (filter (fn [{:keys [dep]}]
        ;;           (string/includes? dep ".pb.")))
+       ;;
+       ;; only include .go files
+       (filter (fn [{:keys [dep]}]
+                 (string/ends-with? dep ".go")))
        (filter (fn [{:keys [file]}]
                  (condp = mode
                    :all true
@@ -81,14 +85,14 @@
 ;;  - List these per module, per file.
 
 (defn test-only-edges
-  []
-  (set/difference (dep-edges :all) (dep-edges :prod)))
+  [xml-file]
+  (set/difference (make-dep-edges xml-file :all) (make-dep-edges xml-file :prod)))
 
 (defn novel-test-refs
-  []
+  [xml-file]
   (let [test-only? (set (test-only-edges))]
-    (->> (modules dependency-xml)
-         (mapcat (partial module-file-edges :test dependency-xml))
+    (->> (modules xml-file)
+         (mapcat (partial module-file-edges :test xml-file))
          (filter (fn [[a b]]
                    (test-only? [(module-from-path a) (module-from-path b)]))))))
 
@@ -107,8 +111,10 @@
        (distinct)))
 
 (defn print-cyclic [edges]
-  (doseq [[a b] (sort-by first edges)]
-    (println a "<->" b)))
+  (doseq [s (->> (sort-by first edges)
+                 (map (fn [[a b]] (str a " <-> " b)))
+                 (distinct))]
+    (println s)))
 
 (defn visualize [edges]
   (-> (tangle/graph->dot
@@ -121,8 +127,8 @@
 
 
 (comment
-  (def main-xml "./x-deps-main-20230516.xml")
-  (def branch-xml "./x-deps-rm-getsignbytes.xml")
+  (def main-xml "./x-deps-main-20230619.xml")
+  (def branch-xml "./x-deps-auth-deps.xml")
   ;;
   ;; visualize the production dependency graph
   (visualize (make-dep-edges :prod main-xml))
@@ -133,6 +139,7 @@
   (visualize (make-dep-edges :all branch-xml))
   ;;
   ;; print cyclic dependencies
-  (-> (make-dep-edges :prod main-xml) graph-from-edges cyclic-dependencies print-cyclic)
+  ;;
+  (-> (make-dep-edges :all main-xml) graph-from-edges cyclic-dependencies print-cyclic)
   (-> (make-dep-edges :prod branch-xml) graph-from-edges cyclic-dependencies print-cyclic)
   )
