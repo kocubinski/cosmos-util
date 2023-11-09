@@ -40,7 +40,8 @@ function full_init {
         https://github.com/osmosis-labs/networks/raw/main/osmosis-1/genesis.json
     colorprint "Downloading and Replacing Addressbook..."
     wget -O $OSMOHOME/config/addrbook.json \
-        https://quicksync.io/addrbook.osmosis.json
+        https://rpc.osmosis.zone/addrbook
+#        https://quicksync.io/addrbook.osmosis.json
 }
 
 # Pruning: Keep last 10,000 states and prune at a random prime block interval
